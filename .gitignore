@@ -2,6 +2,7 @@ node_modules
 .next
 .DS_Store
 npm-debug.log*
+.claude/
 uploads/*
 !uploads/.gitkeep
 data/*

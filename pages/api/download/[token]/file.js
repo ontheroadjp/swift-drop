@@ -4,6 +4,12 @@ import bcrypt from 'bcryptjs';
 import { getDb } from '../../../../lib/db';
 import { buildContentDisposition, safeDownloadName } from '../../../../lib/download';
 import { normalizeFilename } from '../../../../lib/filename';
+import {
+  clearAuthFailures,
+  getClientIp,
+  isAuthLocked,
+  recordAuthFailure,
+} from '../../../../lib/security';
 import { UPLOAD_DIR } from '../../../../lib/storage';
 
 async function resolveFileRow(db, token, fileId, transfer) {
@@ -44,6 +50,12 @@ export default async function handler(req, res) {
   }
 
   const db = await getDb();
+  const ip = getClientIp(req);
+
+  if (await isAuthLocked(db, token, ip)) {
+    return res.status(429).send('試行回数が上限に達しました。しばらく待ってから再試行してください。');
+  }
+
   const transfer = await db.get('SELECT * FROM transfers WHERE token = ?', token);
 
   if (!transfer) {
@@ -56,8 +68,10 @@ export default async function handler(req, res) {
 
   const isValidCode = await bcrypt.compare(code, transfer.code_hash);
   if (!isValidCode) {
+    await recordAuthFailure(db, token, ip);
     return res.status(401).send('認証コードが正しくありません。');
   }
+  await clearAuthFailures(db, token, ip);
 
   const row = await resolveFileRow(db, token, parsedFileId, transfer);
   if (!row) {

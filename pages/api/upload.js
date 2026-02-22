@@ -12,6 +12,7 @@ import {
   MIN_EXPIRE_DAYS,
 } from '../../lib/constants';
 import { normalizeFilename } from '../../lib/filename';
+import { allowUploadRequest, getClientIp, getPublicBaseUrl } from '../../lib/security';
 import { ensureDirectories, UPLOAD_DIR } from '../../lib/storage';
 
 ensureDirectories();
@@ -45,12 +46,6 @@ function createCode() {
   const max = 10 ** CODE_LENGTH;
   const min = 10 ** (CODE_LENGTH - 1);
   return String(Math.floor(Math.random() * (max - min) + min));
-}
-
-function buildBaseUrl(req) {
-  const proto = req.headers['x-forwarded-proto'] || 'http';
-  const host = req.headers.host;
-  return `${proto}://${host}`;
 }
 
 function parseExpireDays(value) {
@@ -88,6 +83,11 @@ export const config = {
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  const ip = getClientIp(req);
+  if (!allowUploadRequest(ip)) {
+    return res.status(429).json({ error: 'リクエストが多すぎます。しばらく待ってから再試行してください。' });
   }
 
   try {
@@ -182,7 +182,8 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'メタデータ保存に失敗しました。' });
   }
 
-  const downloadUrl = `${buildBaseUrl(req)}/d/${token}`;
+  const baseUrl = getPublicBaseUrl();
+  const downloadUrl = baseUrl ? `${baseUrl}/d/${token}` : `/d/${token}`;
   const totalSize = normalizedFiles.reduce((sum, file) => sum + file.size, 0);
 
   return res.status(200).json({
