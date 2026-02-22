@@ -1,0 +1,15 @@
+{
+  "repo_id": "swift-drop",
+  "package_manager": "npm",
+  "doc_roots": [
+    "docs/L1_project",
+    "docs/L2_development",
+    "docs/L3_implementation"
+  ],
+  "commands": {
+    "install": "npm install",
+    "dev": "npm run dev",
+    "build": "npm run build",
+    "start": "npm run start"
+  }
+}
