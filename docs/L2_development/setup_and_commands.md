@@ -51,3 +51,13 @@ Evidence:
 
 How to confirm:
 - Add and inspect `.github/workflows/*.yml`.
+
+## Security Runtime Notes
+- `APP_BASE_URL`
+  - If set, upload API returns an absolute download URL using this origin.
+  - If not set, upload API returns a relative path (`/d/<token>`).
+  - Evidence: `pages/api/upload.js:185-187`, `lib/security.js:24-37`
+- `TRUST_PROXY`
+  - Set `TRUST_PROXY=true` only when the app is behind a trusted reverse proxy.
+  - When not set to `true`, client IP is resolved from socket address and `x-forwarded-for` is ignored.
+  - Evidence: `lib/security.js:9-22`

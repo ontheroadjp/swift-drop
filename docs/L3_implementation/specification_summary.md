@@ -96,3 +96,19 @@ Evidence:
 
 Evidence:
 - pages/api/download/[token].js:2
+
+## Security Controls (Current)
+- Auth attempt throttling:
+  - Failed code attempts are tracked by `token + ip_address`.
+  - Requests are locked for a period after threshold exceed.
+  - Evidence: `lib/db.js:44-55`, `lib/security.js:57-139`
+- Upload request throttling:
+  - Upload requests are limited per IP in process memory window.
+  - Evidence: `lib/security.js:5-7`, `lib/security.js:39-51`, `pages/api/upload.js:88-91`
+- Proxy trust behavior:
+  - `x-forwarded-for` is used only when `TRUST_PROXY=true`.
+  - Evidence: `lib/security.js:9-22`
+
+## Dependency Risk (Known)
+- `npm audit --omit=dev` currently reports high vulnerabilities in transitive dependencies (`minimatch`/`tar` paths) with no fix available at this time.
+- This is a known residual risk and requires periodic reassessment on dependency updates.
