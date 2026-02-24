@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import archiver from 'archiver';
 import bcrypt from 'bcryptjs';
-import { getDb } from '../../../../lib/db';
+import { getStore } from '../../../../lib/store';
 import { buildContentDisposition, safeDownloadName } from '../../../../lib/download';
 import { normalizeFilename } from '../../../../lib/filename';
 import {
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     return res.status(400).send('認証コードを入力してください。');
   }
 
-  const db = await getDb();
+  const db = await getStore();
   const ip = getClientIp(req);
 
   if (await isAuthLocked(db, token, ip)) {

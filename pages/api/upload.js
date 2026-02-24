@@ -3,7 +3,7 @@ import path from 'path';
 import multer from 'multer';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { getDb } from '../../lib/db';
+import { getStore } from '../../lib/store';
 import {
   CODE_LENGTH,
   DEFAULT_EXPIRE_DAYS,
@@ -127,57 +127,54 @@ export default async function handler(req, res) {
   const expiresAt = new Date(now.getTime() + expireDays * 24 * 60 * 60 * 1000);
   const firstFile = normalizedFiles[0];
 
-  const db = await getDb();
+  const store = await getStore();
   try {
-    await db.run('BEGIN');
-
-    await db.run(
-      `
-        INSERT INTO transfers (
-          token,
-          original_name,
-          stored_name,
-          mime_type,
-          file_size,
-          code_hash,
-          created_at,
-          expires_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      token,
-      firstFile.originalname,
-      firstFile.filename,
-      firstFile.mimetype || 'application/octet-stream',
-      firstFile.size,
-      codeHash,
-      now.toISOString(),
-      expiresAt.toISOString()
-    );
-
-    for (const file of normalizedFiles) {
-      await db.run(
+    await store.withTransaction(async (tx) => {
+      await tx.run(
         `
-          INSERT INTO transfer_files (
-            transfer_token,
+          INSERT INTO transfers (
+            token,
             original_name,
             stored_name,
             mime_type,
             file_size,
+            code_hash,
             created_at
-          ) VALUES (?, ?, ?, ?, ?, ?)
+            ,expires_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `,
         token,
-        file.originalname,
-        file.filename,
-        file.mimetype || 'application/octet-stream',
-        file.size,
-        now.toISOString()
+        firstFile.originalname,
+        firstFile.filename,
+        firstFile.mimetype || 'application/octet-stream',
+        firstFile.size,
+        codeHash,
+        now.toISOString(),
+        expiresAt.toISOString()
       );
-    }
 
-    await db.run('COMMIT');
+      for (const file of normalizedFiles) {
+        await tx.run(
+          `
+            INSERT INTO transfer_files (
+              transfer_token,
+              original_name,
+              stored_name,
+              mime_type,
+              file_size,
+              created_at
+            ) VALUES (?, ?, ?, ?, ?, ?)
+          `,
+          token,
+          file.originalname,
+          file.filename,
+          file.mimetype || 'application/octet-stream',
+          file.size,
+          now.toISOString()
+        );
+      }
+    });
   } catch {
-    await db.run('ROLLBACK');
     removeUploadedFiles(files);
     return res.status(500).json({ error: 'メタデータ保存に失敗しました。' });
   }

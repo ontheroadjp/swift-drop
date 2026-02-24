@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { getDb } from '../../../../lib/db';
+import { getStore } from '../../../../lib/store';
 import { normalizeFilename } from '../../../../lib/filename';
 import {
   clearAuthFailures,
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: '認証コードを入力してください。' });
   }
 
-  const db = await getDb();
+  const db = await getStore();
   const ip = getClientIp(req);
 
   if (await isAuthLocked(db, token, ip)) {
