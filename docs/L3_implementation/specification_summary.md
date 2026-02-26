@@ -56,18 +56,27 @@ Evidence:
 - pages/api/download/[token]/bundle.js:118
 
 ## Persistence Specification
-- DB file: `data/swift_drop.db`
+- Store provider:
+  - `DB_PROVIDER=sqlite` (default): `SQLiteStore`
+  - `DB_PROVIDER=turso`: `TursoStore`
 - Tables:
   - `transfers` (token, code_hash, expiry, counters)
   - `transfer_files` (per-file rows linked by `transfer_token`)
-- Upload transaction writes both tables in one transaction
+  - `auth_attempts` (token + ip based auth throttling state)
+- Upload writes `transfers` and `transfer_files` in one transaction (`withTransaction`)
 
 Evidence:
-- lib/db.js:12
-- lib/db.js:18
-- lib/db.js:31
+- lib/store/index.js:7-15
+- lib/store/sqlite-store.js:26
+- lib/store/sqlite-store.js:39
+- lib/store/sqlite-store.js:52
+- lib/store/sqlite-store.js:88
+- lib/store/turso-store.js:30
+- lib/store/turso-store.js:45
+- lib/store/turso-store.js:62
+- lib/store/turso-store.js:101
+- pages/api/upload.js:130
 - pages/api/upload.js:132
-- pages/api/upload.js:157
 
 ## Filename Handling
 - Uploaded/display names are normalized with mojibake-aware decoding heuristic
@@ -101,7 +110,7 @@ Evidence:
 - Auth attempt throttling:
   - Failed code attempts are tracked by `token + ip_address`.
   - Requests are locked for a period after threshold exceed.
-  - Evidence: `lib/db.js:44-55`, `lib/security.js:57-139`
+  - Evidence: `lib/store/sqlite-store.js:52-63`, `lib/store/turso-store.js:62-77`, `lib/security.js:60-142`
 - Upload request throttling:
   - Upload requests are limited per IP in process memory window.
   - Evidence: `lib/security.js:5-7`, `lib/security.js:39-51`, `pages/api/upload.js:88-91`
