@@ -36,13 +36,13 @@ Evidence:
 
 ## Paths Relevant To Development
 - Uploaded files directory: `uploads/`
-- SQLite DB directory: `data/`
-- SQLite DB file: `data/swift_drop.db`
+- Local SQLite directory (when `DB_PROVIDER=sqlite`): `data/`
+- Local SQLite file (when `DB_PROVIDER=sqlite`): `data/swift_drop.db`
 
 Evidence:
 - lib/storage.js:5
 - lib/storage.js:6
-- lib/db.js:12
+- lib/store/sqlite-store.js:18
 - README.md:32
 - README.md:33
 
@@ -61,3 +61,19 @@ How to confirm:
   - Set `TRUST_PROXY=true` only when the app is behind a trusted reverse proxy.
   - When not set to `true`, client IP is resolved from socket address and `x-forwarded-for` is ignored.
   - Evidence: `lib/security.js:9-22`
+- `DB_PROVIDER`
+  - `sqlite` (default): uses local SQLite store.
+  - `turso`: uses Turso/libSQL store.
+  - Evidence: `lib/store/index.js:7-15`
+- Turso required variables (when `DB_PROVIDER=turso`)
+  - `TURSO_DATABASE_URL`
+  - `TURSO_AUTH_TOKEN`
+  - Evidence: `lib/store/turso-store.js:13-18`
+
+## Environment File
+- Use `.env` for runtime configuration.
+- A documented sample is available as `.env.example`.
+
+Evidence:
+- .env.example:1-17
+- .gitignore:5-6

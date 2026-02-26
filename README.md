@@ -30,5 +30,8 @@ npm run dev
 ## Notes
 
 - 保存先ファイル: `uploads/`
-- メタデータ DB: `data/swift_drop.db`
+- メタデータ DB:
+  - `DB_PROVIDER=sqlite` の場合: `data/swift_drop.db`
+  - `DB_PROVIDER=turso` の場合: Turso/libSQL（`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`）
+- 設定ファイルサンプル: `.env.example`
 - デフォルト有効期限: 発行から 7 日間
